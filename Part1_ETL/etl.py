@@ -29,7 +29,11 @@ for file in csv_files:
             row_clean = {
                 'TR_class': row.get('TR class', ''),
                 'Status': status ,
-                'Ball': ball
+                'Ball': ball,
+                'oliy_talim_muassasasi': row.get('Oliy ta\'lim muassasasi', ''),
+                'FIO': row.get('F.I.SH', ''),
+                'yonalish':row.get("Yo'nalish",''),
+                'til':row.get("Ta'lim tili")
             }
             cleaned_data.append(row_clean)
 
@@ -50,11 +54,11 @@ try:
     cursor.fast_executemany = True
 
     insert_query = """
-        insert into abituriyent_2024 (tr_class, status, ball)
-        values (?, ?, ?)
+        insert into abituriyent_2024 (tr_class, status, ball,oliy_talim_muassasasi,FIO,yonalish,til)
+        values (?, ?, ?,?,?,?,?)
     """
     records_to_insert = [
-        (item['TR_class'], item['Status'], item['Ball'])
+        (item['TR_class'], item['Status'], item['Ball'],item['oliy_talim_muassasasi'],item['FIO'],item['yonalish'],item['til'])
         for item in cleaned_data
     ]
 

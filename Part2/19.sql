@@ -1,0 +1,2 @@
+-- IN - Compares specific values
+-- EXISTS - Checks for the existence of rows

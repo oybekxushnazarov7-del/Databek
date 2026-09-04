@@ -7,7 +7,7 @@ folder_path = './mandat_uzbmb_uz_2025'
 csv_files = glob.glob(os.path.join(folder_path, '*.csv'))
 print(f"Jami {len(csv_files)} ta CSV fayllar topildi.")
 
-#data cleaning 1
+#data cleaning 111
 cleaned_data = []
 for file in csv_files:
     with open(file, 'r', encoding='utf-8-sig') as f:

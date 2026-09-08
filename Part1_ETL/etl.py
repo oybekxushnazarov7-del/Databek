@@ -1,52 +1,73 @@
-import csv 
 import glob
 import os 
 import pyodbc
+import pandas as pd
+from dotenv import load_dotenv
 
-folder_path = './mandat_uzbmb_uz_2025'
+load_dotenv()
+
+folder_path = 'Part1_ETL/mandat_uzbmb_uz_2025'
 csv_files = glob.glob(os.path.join(folder_path, '*.csv'))
 print(f"Jami {len(csv_files)} ta CSV fayllar topildi.")
 
-#data cleaning 111
-cleaned_data = []
+
+df_list = []
 for file in csv_files:
-    with open(file, 'r', encoding='utf-8-sig') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            tr_class = (row.get('TR class') or '').strip().lower()
-            if 'table-success' in tr_class:
-                status = 'Grant'
-            elif 'table-warning' in tr_class:
-                status = 'Kontrakt'
-            else:
-                status = 'Yiqilgan'
+    temp_df = pd.read_csv(file, encoding = "utf-8-sig", dtype = str)
+    df_list.append(temp_df)
 
-            raw_ball = row.get('Ball', '0')
-            try :
-                ball = float(raw_ball.replace(',', '.'))
-            except ValueError:
-                ball = 0.0
+df = pd.concat(df_list, ignore_index=True)
 
-            row_clean = {
-                'TR_class': row.get('TR class', ''),
-                'Status': status ,
-                'Ball': ball,
-                'oliy_talim_muassasasi': row.get('Oliy ta\'lim muassasasi', ''),
-                'FIO': row.get('F.I.SH', ''),
-                'yonalish':row.get("Yo'nalish",''),
-                'til':row.get("Ta'lim tili")
-            }
-            cleaned_data.append(row_clean)
+def get_status(tr_class):
+    tr = str(tr_class).lower()
+    if "table-success" in tr:
+        return "Grant"
+    elif "table-warning" in tr:
+        return "Kontrakt"
+    return "Yiqilgan"
 
-print(f"Jami {len(cleaned_data)} ta qator tozalandi")
+df["Status"] = df["TR class"].apply(get_status)
+
+df["Ball"] = (
+    df["Ball"].astype(str).str.replace(",", ".", regex = False)
+    .apply(pd.to_numeric, errors = "coerce").fillna(0.0)
+)
+
+df_clean = pd.DataFrame(
+    {
+        "ID": df.get("ID", None),
+        "TR_class": df.get("TR class", ""),
+        "Status": df["Status"],
+        "Ball": df["Ball"],
+        "oliy_talim_muassasasi": df.get("Oliy ta'lim muassasasi", ""),
+        "FIO": df.get("F.I.SH", ""),
+        "yonalish": df.get("Yo'nalish", ""),
+        "talim_shakli": df.get("Ta'lim shakli", ""),
+        "til": df.get("Ta'lim tili", ""),
+    }
+)
+
+df_clean = df_clean.drop_duplicates(subset = ["ID"])
+df_clean = df_clean.fillna("")
+print(f"Jami  {len(df_clean)} ta toza qilindi va birlashtirildi")
 
 
 
-SERVER = '.\\SQLEXPRESS'
-DATABASE = 'HR'
-DRIVER = '{ODBC Driver 17 for SQL Server}'
+SERVER = os.getenv("DB_SERVER")
+DATABASE = os.getenv("DB_DATABASE")
+USERNAME = os.getenv("DB_USERNAME")
+PASSWORD = os.getenv("DB_PASSWORD")
+DRIVER = os.getenv("DB_DRIVER")
 
-conn_str = f"DRIVER={DRIVER};SERVER={SERVER};DATABASE={DATABASE};Trusted_Connection=yes;"
+conn_str = (
+    f"DRIVER={DRIVER};"
+    f"SERVER={SERVER};"
+    f"DATABASE={DATABASE};"
+    f"UID={USERNAME};"
+    f"PWD={PASSWORD};"
+    "Encrypt=yes;"
+    "TrustServerCertificate=no;"
+)
 
 try:
     conn = pyodbc.connect(conn_str)
@@ -55,13 +76,11 @@ try:
     cursor.fast_executemany = True
 
     insert_query = """
-        insert into abituriyent_2024 (tr_class, status, ball,oliy_talim_muassasasi,FIO,yonalish,til)
-        values (?, ?, ?,?,?,?,?)
+        insert into abituriyent_2024 (ID,tr_class, status, ball,oliy_talim_muassasasi,FIO,yonalish,talim_shakli,til)
+        values (?,?,?,?,?,?,?,?,?)
     """
-    records_to_insert = [
-        (item['TR_class'], item['Status'], item['Ball'],item['oliy_talim_muassasasi'],item['FIO'],item['yonalish'],item['til'])
-        for item in cleaned_data
-    ]
+
+    records_to_insert = list(df_clean.itertuples(index=False, name=None))
 
     cursor.executemany(insert_query, records_to_insert)
     conn.commit()

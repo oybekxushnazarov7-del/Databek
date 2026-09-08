@@ -47,7 +47,7 @@ df_clean = pd.DataFrame(
     }
 )
 
-df_clean = df_clean.drop_duplicates(subset = ["ID"])
+df_clean = df_clean.drop_duplicates(subset = ["ID"]) 
 df_clean = df_clean.fillna("")
 print(f"Jami  {len(df_clean)} ta toza qilindi va birlashtirildi")
 

@@ -1,9 +1,20 @@
-select top 5
-	f.company_name,
-	count(f.job_id) as vakansiyalar_soni,
-	max(f.job_salary) as eng_baland_maosh
-from fact_jobs f
-where f.company_name not like '%?%'
-Group by f.company_name
-having count(f.job_id) > 5 
-order by eng_baland_maosh desc, vakansiyalar_soni asc
+SELECT TOP 10
+    c.title AS kanal_nomi,
+    COUNT(f.job_id) AS vakansiyalar_soni,
+    AVG(f.job_salary) AS ortacha_maosh
+FROM dbo.fact_jobs f
+JOIN dbo.dim_channels c ON f.job_id = c.id
+WHERE c.title IS NOT NULL
+GROUP BY c.title
+ORDER BY vakansiyalar_soni DESC;
+
+SELECT TOP 10
+    f.company_name,
+    COUNT(f.job_id) AS vakansiyalar_soni,
+    AVG(f.job_salary) AS ortacha_maosh
+FROM dbo.fact_jobs f
+WHERE f.company_name IS NOT NULL 
+  AND f.company_name NOT LIKE '%?%'
+GROUP BY f.company_name
+HAVING COUNT(f.job_id) > 1
+ORDER BY vakansiyalar_soni DESC;

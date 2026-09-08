@@ -1,10 +1,10 @@
-select top 5
-	o.occupation,
-	count(f.job_id) as vakansiyalar_soni,
-	max(f.job_salary) as eng_baland_maosh
-from fact_jobs f
-Join dim_occupations o  ON f.job_id = o.job_id
-where o.occupation not like '%?%'
-Group by o.occupation
-having count(f.job_id) > 1 
-order by eng_baland_maosh desc, vakansiyalar_soni asc
+SELECT TOP 5
+    o.occupation_name,
+    COUNT(f.job_id) AS vakansiyalar_soni,
+    AVG(f.job_salary) AS ortacha_maosh
+FROM dbo.fact_jobs f
+JOIN dbo.dim_occupations o ON f.occupation_id = o.occupation_id
+WHERE f.job_salary IS NOT NULL
+GROUP BY o.occupation_name
+HAVING COUNT(f.job_id) >= 1
+ORDER BY ortacha_maosh DESC, vakansiyalar_soni ASC;

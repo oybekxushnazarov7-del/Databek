@@ -1,4 +1,7 @@
---create database HR
+create database HR
+GO
+USE HR
+GO
 
 IF OBJECT_ID('dbo.EMPLOYEE', 'U') IS NULL 
 BEGIN
@@ -15,7 +18,7 @@ IF OBJECT_ID('dbo.SKILL', 'U') IS NULL
 BEGIN
 	create table SKILL (
 		Skill_ID int identity(100,10) primary key,
-		Skill_Name nvarchar(max),
+		Skill_Name nvarchar(100),
 		Skill_Description nvarchar(max)
 	)
 END

@@ -1,6 +1,6 @@
+import urllib
 import pandas as pd
 from sqlalchemy import create_engine
-import urllib
 from transform import transform_data
 
 SERVER_NAME = r'DESKTOP-EU0USCO\SQLEXPRESS'
@@ -13,22 +13,28 @@ params = urllib.parse.quote_plus(
     f"Trusted_Connection=yes;"
 )
 
-engine = create_engine(f"mssql+pyodbc:///?odbc_connect={params}")
+engine = create_engine(f"mssql+pyodbc:///?odbc_connect={params}", fast_executemany=True)
 
 def load_to_sql_server():
-    fact_jobs, dim_locations, dim_occupations, dim_skills = transform_data()
+    data = transform_data()
 
-    print("1. Joylashuvlar (dim_locations) yuklanmoqda...")
-    dim_locations.to_sql('dim_locations', con=engine, if_exists='replace', index=False)
+    load_order = [
+        ('dim_locations', data['dim_locations']),
+        ('dim_occupations', data['dim_occupations']),
+        ('dim_skills', data['dim_skills']),
+        ('dim_channels', data['dim_channels']),
+        ('fact_jobs', data['fact_jobs']),
+        ('fact_job_skills', data['fact_job_skills'])
+    ]
 
-    print("2. Kasblar (dim_occupations) yuklanmoqda...")
-    dim_occupations.to_sql('dim_occupations', con=engine, if_exists='replace', index=False)
-
-    print("3. Ko'nikmalar (dim_skills) yuklanmoqda...")
-    dim_skills.to_sql('dim_skills', con=engine, if_exists='replace', index=False)
-
-    print("4. Asosiy e'lonlar (fact_jobs) yuklanmoqda...")
-    fact_jobs.to_sql('fact_jobs', con=engine, if_exists='replace', index=False)
+    for table_name, df in load_order:
+        df.to_sql(
+            name=table_name, 
+            con=engine, 
+            if_exists='append', 
+            index=False,
+            chunksize=1000
+        )
 
 if __name__ == "__main__":
     load_to_sql_server()

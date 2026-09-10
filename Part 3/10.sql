@@ -1,2 +1,0 @@
--- Union all - duplicatlar qoladi
--- Union - duplicatlar o'chiriliadi 
